@@ -1,11 +1,15 @@
-import 'dart:math';
-
-import 'package:nonogram_dart/nonogram_dart.dart';
 import 'package:nonogram_dart/src/description.dart';
 import 'package:nonogram_dart/src/nonogram.dart';
 import 'package:nonogram_dart/src/solver/line_solver.dart';
 
-abstract class Solver extends Iterable<Solver> {
+class Solution {
+  final Grid grid;
+  final List<Step> steps;
+
+  const Solution(this.grid, this.steps);
+}
+
+abstract class Solver extends Iterable<Solution> {
   final Nonogram nonogram;
   final Grid grid;
   late List<Step> steps;
@@ -37,8 +41,18 @@ class LogicalSolver extends Solver {
   List<Step> solve() {
     while (true) {
       var stepsStart = steps.length;
-      _sweep(grid.height, (i) => grid.getRow(i), (i) => nonogram.rows[i]);
-      _sweep(grid.width, (i) => grid.getColumn(i), (i) => nonogram.columns[i]);
+      _sweep(
+        grid.height,
+        (i) => grid.getRow(i),
+        (i) => nonogram.rows[i],
+        (step, i) => step.copyWith(pos: Position(i, step.i)),
+      );
+      _sweep(
+        grid.width,
+        (i) => grid.getColumn(i),
+        (i) => nonogram.columns[i],
+        (step, i) => step.copyWith(pos: Position(step.i, i)),
+      );
 
       // stop if solver is stalling
       if (stepsStart == steps.length) {
@@ -52,6 +66,7 @@ class LogicalSolver extends Solver {
     int n,
     Line Function(int i) getLine,
     Description Function(int i) getDescription,
+    Step Function(Step step, int i) copyStep,
   ) {
     for (var i = 0; i < n; i++) {
       final line = getLine(i);
@@ -61,15 +76,20 @@ class LogicalSolver extends Solver {
       final lineSolver = PermutationSolver(line, getDescription(i));
       for (var step in lineSolver.getSteps()) {
         line.set(step.i, step.color);
-        steps.add(step);
+        steps.add(copyStep(step, i));
       }
     }
   }
 
   @override
-  Iterator<Solver> get iterator {
+  Iterator<Solution> get iterator {
     solve();
-    return [this].iterator;
+
+    if (!nonogram.solvedBy(grid)) {
+      return <Solution>[].iterator;
+    }
+
+    return [Solution(grid, steps)].iterator;
   }
 }
 
@@ -86,7 +106,7 @@ class GuessingSolver extends Solver {
   }
 
   @override
-  Iterator<Solver> get iterator =>
+  Iterator<Solution> get iterator =>
       GuessingSolverIterator(LogicalSolver(nonogram, grid, steps: steps));
 
   @override
@@ -98,7 +118,7 @@ class GuessingSolver extends Solver {
   }
 }
 
-class GuessingSolverIterator with Iterator<Solver> {
+class GuessingSolverIterator with Iterator<Solution> {
   late final List<LogicalSolver> _solvers = [];
   late Solver _solver;
 
@@ -107,7 +127,7 @@ class GuessingSolverIterator with Iterator<Solver> {
   }
 
   @override
-  Solver get current => _solver;
+  Solution get current => Solution(_solver.grid, _solver.steps);
 
   @override
   bool moveNext() {
@@ -132,22 +152,22 @@ class GuessingSolverIterator with Iterator<Solver> {
       }
 
       // start guessing
-      Point<int> cell = const Point(-1, -1);
+      Position cell = const Position(-1, -1);
       for (var i = 0; i < grid.height; i++) {
         for (var j = 0; j < grid.width; j++) {
           if (grid.get(i, j) != null) {
             continue;
           }
           //TODO: support colored cells
-          cell = Point(j, i);
+          cell = Position(i, j);
         }
       }
 
       for (var color in [0, 1]) {
         var gridCopy = grid.copy();
-        gridCopy.set(cell.y, cell.x, color);
+        gridCopy.set(cell.row, cell.column, color);
         _solvers.add(LogicalSolver(nonogram, gridCopy,
-            steps: [..._solver.steps, Step(-1, color, branch: true)]));
+            steps: [..._solver.steps, Step(cell, color, branch: true)]));
       }
     }
 

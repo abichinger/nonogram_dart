@@ -1,16 +1,39 @@
 import 'package:nonogram_dart/src/description.dart';
 import 'package:nonogram_dart/src/nonogram.dart';
 
+class Position {
+  final int row;
+  final int column;
+
+  const Position(this.row, this.column);
+}
+
 class Step {
-  final int i;
+  final Position pos;
   final int color;
   final bool branch;
 
   const Step(
-    this.i,
+    this.pos,
     this.color, {
     this.branch = false,
   });
+
+  factory Step.line(int i, int color, {bool branch = false}) {
+    return Step(Position(0, i), color, branch: branch);
+  }
+
+  Step copyWith({Position? pos, int? color, bool? branch}) {
+    return Step(
+      pos ?? this.pos,
+      color ?? this.color,
+      branch: branch ?? this.branch,
+    );
+  }
+
+  int get i => pos.column;
+  int get row => pos.row;
+  int get column => pos.column;
 }
 
 abstract class LineSolver {
@@ -40,7 +63,7 @@ class PermutationSolver implements LineSolver {
     }
 
     Set<int> newBlocks = merged.fixed.difference(fixed);
-    return newBlocks.map((i) => Step(i, merged.get(i) as int)).toList();
+    return newBlocks.map((i) => Step.line(i, merged.get(i) as int)).toList();
   }
 }
 
@@ -66,6 +89,8 @@ class LineDescription {
 
   int get length => description.sumStrokes + _sumSpaces;
 
+  bool get isEmpty => description.isEmpty;
+
   LineDescription copy() {
     return LineDescription.from(description);
   }
@@ -89,6 +114,7 @@ class DescriptionIterator extends Iterable<Line> with Iterator<Line> {
   final LineDescription lineDescription;
   late final int _lineLength;
   late int _length;
+  bool _done = false;
 
   DescriptionIterator(this.lineDescription, int lineLength) {
     _length = lineDescription.length;
@@ -106,6 +132,17 @@ class DescriptionIterator extends Iterable<Line> with Iterator<Line> {
 
   @override
   bool moveNext() {
+    //TODO: colored nonograms can have 0 spaces between different colors
+
+    if (_done) {
+      return false;
+    }
+
+    if (lineDescription.isEmpty) {
+      _done = true;
+      return true;
+    }
+
     final lengthLeft = _lineLength - _length;
     if (lengthLeft <= 0) {
       for (var i = 0; i < spaces.length - 1; i++) {

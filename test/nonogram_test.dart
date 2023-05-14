@@ -9,10 +9,17 @@ void main() {
       expect(l1.toDescription(), desc.Description.monochrome([1, 1]));
 
       final l2 = ListLine([1, null, 1, 1]);
-      expect(l2.toDescription(), desc.Description.monochrome([1]));
+      expect(l2.toDescription(), desc.Description.monochrome([]));
       expect(
         l2.toDescription(returnIfNull: false),
         desc.Description.monochrome([1, 2]),
+      );
+
+      final l3 = ListLine([1, 0, null, 1]);
+      expect(l3.toDescription(), desc.Description.monochrome([1]));
+      expect(
+        l3.toDescription(returnIfNull: false),
+        desc.Description.monochrome([1, 1]),
       );
     });
   });

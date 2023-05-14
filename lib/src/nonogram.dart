@@ -1,4 +1,4 @@
-import 'package:nonogram_dart/src/description.dart';
+import 'package:nonogram_dart/nonogram_dart.dart';
 
 abstract class Line extends Iterable<int?> {
   const Line();
@@ -23,6 +23,8 @@ abstract class Line extends Iterable<int?> {
     }
   }
 
+  Line get reversed => ReversedLine(this);
+
   Description toDescription({bool returnIfNull = true}) {
     if (isEmpty) {
       return const Description([]);
@@ -32,15 +34,15 @@ abstract class Line extends Iterable<int?> {
     int? currentColor = first;
     int strokeLength = 0;
     for (var color in this) {
+      if (returnIfNull && color == null) {
+        return Description(strokes);
+      }
       if (currentColor != color) {
         if (currentColor != null && currentColor != NgColors.spaceColor) {
           strokes.add(Stroke(currentColor, strokeLength));
         }
         currentColor = color;
         strokeLength = 0;
-      }
-      if (returnIfNull && color == null) {
-        return Description(strokes);
       }
       strokeLength++;
     }
@@ -49,6 +51,44 @@ abstract class Line extends Iterable<int?> {
     }
 
     return Description(strokes);
+  }
+
+  @override
+  String toString() {
+    return map((color) {
+      if (color == null) {
+        return "n";
+      }
+      if (color == NgColors.spaceColor) {
+        return "□";
+      }
+      return "■";
+    }).join(" ");
+  }
+}
+
+class ReversedLine extends Line {
+  final Line line;
+
+  ReversedLine(this.line);
+
+  int _translate(int i) {
+    return length - 1 - i;
+  }
+
+  @override
+  int? get(int i) {
+    return line.get(_translate(i));
+  }
+
+  @override
+  void set(int i, int? color) {
+    line.set(_translate(i), color);
+  }
+
+  @override
+  int get length {
+    return line.length;
   }
 }
 
@@ -199,6 +239,19 @@ class Grid extends Iterable<List<int?>> {
     ];
     return Grid(copy);
   }
+
+  Nonogram toNonogram() {
+    assert(filledOut);
+
+    final rows = List.generate(height, (i) => getRow(i).toDescription());
+    final columns = List.generate(width, (i) => getColumn(i).toDescription());
+    return Nonogram(rows, columns);
+  }
+
+  @override
+  String toString() {
+    return List.generate(height, (i) => getRow(i).toString()).join("\n");
+  }
 }
 
 class Nonogram {
@@ -236,6 +289,19 @@ class Nonogram {
       }
     }
 
+    return true;
+  }
+
+  bool isLineSolveable() {
+    final solver = LogicalSolver.empty(this);
+    final solutions = solver.toList();
+    if (solutions.length != 1) {
+      return false;
+    }
+    final solution = solutions[0];
+    if (solution.steps.length != width * height) {
+      return false;
+    }
     return true;
   }
 }

@@ -1,3 +1,4 @@
+// ignore: depend_on_referenced_packages
 import 'package:collection/collection.dart';
 import 'package:nonogram_dart/nonogram_dart.dart';
 
@@ -37,6 +38,8 @@ class Description {
   }
 
   int get length => strokes.length;
+
+  bool get isEmpty => length == 0;
 
   int get sumStrokes {
     return strokes.fold(0, (acc, stroke) => acc + stroke.length);

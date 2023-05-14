@@ -35,17 +35,11 @@ void main() {
           expect(solver.grid.get(i, j), expected[i][j]);
         }
       }
+
+      expect(puzzle.isLineSolveable(), true);
     });
 
     test('solve (multiple solutions)', () {
-      // final puzzle = Nonogram.monochrome([
-      //   [1],
-      //   [1],
-      // ], [
-      //   [1],
-      //   [1],
-      // ]);
-
       final puzzle = Nonogram.monochrome([
         [4],
         [3],
@@ -69,6 +63,26 @@ void main() {
 
       final solutions = solver.toList();
       expect(solutions.length, 2);
+
+      expect(puzzle.isLineSolveable(), false);
+    });
+
+    test('solve (no solution)', () {
+      final puzzle = Nonogram.monochrome([
+        [2],
+        [2],
+      ], [
+        [1],
+        [1],
+      ]);
+
+      final solver = GuessingSolver.empty(puzzle);
+      solver.solve();
+
+      final solutions = solver.toList();
+      expect(solutions.length, 0);
+
+      expect(puzzle.isLineSolveable(), false);
     });
   });
 }
