@@ -1,3 +1,16 @@
+## 2.0.0
+
+- support colored nonograms
+- add GridGenerator
+- make Description json serializable
+- add more factory functions
+- add Grid.getHash()
+- add Solution.sweeps()
+
+BREAKING CHANGES:
+- removed Generator
+- rename NgColors to Colors
+
 ## 1.0.0
 
 - Initial version.

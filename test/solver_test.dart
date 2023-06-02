@@ -1,8 +1,17 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nonogram_dart/src/description.dart' as desc;
 import 'package:nonogram_dart/src/nonogram.dart';
 import 'package:nonogram_dart/src/solver/solver.dart';
 
+import 'test_util.dart';
+
 void main() {
+  const b = desc.Colors.black;
+  const w = desc.Colors.white;
+  const red = 0xFFFF0000;
+  const blue = 0xFF0000FF;
   group('Solver', () {
     test('solve (logic puzzle)', () {
       final puzzle = Nonogram.monochrome([
@@ -20,22 +29,17 @@ void main() {
       ]);
 
       final expected = [
-        [0, 1, 1, 1, 1],
-        [1, 0, 1, 1, 1],
-        [0, 1, 1, 0, 0],
-        [1, 0, 0, 0, 0],
-        [1, 1, 1, 0, 1],
+        [w, b, b, b, b],
+        [b, w, b, b, b],
+        [w, b, b, w, w],
+        [b, w, w, w, w],
+        [b, b, b, w, b],
       ];
 
       final solver = LogicalSolver.empty(puzzle);
       solver.solve();
 
-      for (var i = 0; i < puzzle.height; i++) {
-        for (var j = 0; j < puzzle.width; j++) {
-          expect(solver.grid.get(i, j), expected[i][j]);
-        }
-      }
-
+      expectGrid(solver.grid, expected);
       expect(puzzle.isLineSolveable(), true);
     });
 
@@ -83,6 +87,40 @@ void main() {
       expect(solutions.length, 0);
 
       expect(puzzle.isLineSolveable(), false);
+    });
+
+    test('solve (logic color puzzle)', () {
+      final grid =
+          Grid.fromPng(File('test/puzzles/target.png').readAsBytesSync());
+      final puzzle = grid.toNonogram();
+
+      expect(
+        puzzle.rows[0],
+        const desc.Description([
+          desc.Stroke(red, 3),
+        ]),
+      );
+      expect(
+        puzzle.rows[1],
+        const desc.Description([
+          desc.Stroke(red, 1),
+          desc.Stroke(blue, 3),
+          desc.Stroke(red, 1),
+        ]),
+      );
+      expect(
+        puzzle.rows[2],
+        const desc.Description([
+          desc.Stroke(red, 1),
+          desc.Stroke(red, 1),
+          desc.Stroke(red, 1),
+        ]),
+      );
+
+      final solver = LogicalSolver.empty(puzzle);
+      solver.solve();
+
+      expect(solver.grid.toList(), grid.toList());
     });
   });
 }

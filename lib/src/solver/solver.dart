@@ -7,6 +7,24 @@ class Solution {
   final List<Step> steps;
 
   const Solution(this.grid, this.steps);
+
+  int sweeps() {
+    var currentFocus = SolverFocus.rows;
+    var count = 1;
+    for (var step in steps) {
+      if (step.focus == null || step.focus == currentFocus) {
+        continue;
+      }
+      currentFocus = step.focus!;
+      count++;
+    }
+    return count;
+  }
+}
+
+enum SolverFocus {
+  rows,
+  columns,
 }
 
 abstract class Solver extends Iterable<Solution> {
@@ -45,13 +63,21 @@ class LogicalSolver extends Solver {
         grid.height,
         (i) => grid.getRow(i),
         (i) => nonogram.rows[i],
-        (step, i) => step.copyWith(pos: Position(i, step.i)),
+        (step, i) => step.copyWith(
+          pos: Position(i, step.i),
+          descriptionIndex: i,
+          focus: SolverFocus.rows,
+        ),
       );
       _sweep(
         grid.width,
         (i) => grid.getColumn(i),
         (i) => nonogram.columns[i],
-        (step, i) => step.copyWith(pos: Position(step.i, i)),
+        (step, i) => step.copyWith(
+          pos: Position(step.i, i),
+          descriptionIndex: i,
+          focus: SolverFocus.columns,
+        ),
       );
 
       // stop if solver is stalling
@@ -106,8 +132,9 @@ class GuessingSolver extends Solver {
   }
 
   @override
-  Iterator<Solution> get iterator =>
-      GuessingSolverIterator(LogicalSolver(nonogram, grid, steps: steps));
+  Iterator<Solution> get iterator => GuessingSolverIterator(
+      LogicalSolver(nonogram, grid, steps: steps),
+      nonogram.colors..add(Colors.white));
 
   @override
   List<Step> solve() {
@@ -121,8 +148,9 @@ class GuessingSolver extends Solver {
 class GuessingSolverIterator with Iterator<Solution> {
   late final List<LogicalSolver> _solvers = [];
   late Solver _solver;
+  final Set<int> colors;
 
-  GuessingSolverIterator(LogicalSolver solver) {
+  GuessingSolverIterator(LogicalSolver solver, this.colors) {
     _solvers.add(solver);
   }
 
@@ -158,12 +186,11 @@ class GuessingSolverIterator with Iterator<Solution> {
           if (grid.get(i, j) != null) {
             continue;
           }
-          //TODO: support colored cells
           cell = Position(i, j);
         }
       }
 
-      for (var color in [0, 1]) {
+      for (var color in colors) {
         var gridCopy = grid.copy();
         gridCopy.set(cell.row, cell.column, color);
         _solvers.add(LogicalSolver(nonogram, gridCopy,

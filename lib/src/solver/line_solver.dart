@@ -1,5 +1,6 @@
 import 'package:nonogram_dart/src/description.dart';
 import 'package:nonogram_dart/src/nonogram.dart';
+import 'package:nonogram_dart/src/solver/solver.dart';
 
 class Position {
   final int row;
@@ -12,22 +13,34 @@ class Step {
   final Position pos;
   final int color;
   final bool branch;
+  final int? descriptionIndex;
+  final SolverFocus? focus;
 
   const Step(
     this.pos,
     this.color, {
     this.branch = false,
+    this.descriptionIndex,
+    this.focus,
   });
 
   factory Step.line(int i, int color, {bool branch = false}) {
     return Step(Position(0, i), color, branch: branch);
   }
 
-  Step copyWith({Position? pos, int? color, bool? branch}) {
+  Step copyWith({
+    Position? pos,
+    int? color,
+    bool? branch,
+    int? descriptionIndex,
+    SolverFocus? focus,
+  }) {
     return Step(
       pos ?? this.pos,
       color ?? this.color,
       branch: branch ?? this.branch,
+      descriptionIndex: descriptionIndex ?? this.descriptionIndex,
+      focus: focus ?? this.focus,
     );
   }
 
@@ -74,8 +87,10 @@ class LineDescription {
   const LineDescription(this.description, this.spaces);
 
   factory LineDescription.from(Description description) {
-    final spaces =
-        List.generate(description.length, (index) => index == 0 ? 0 : 1);
+    final spaces = List.generate(
+      description.length,
+      (i) => description.minSpaceAt(i),
+    );
     return LineDescription(description, spaces);
   }
 
@@ -96,7 +111,7 @@ class LineDescription {
   }
 
   List<int?> toLine(int lineLength) {
-    List<int?> line = List.filled(lineLength, NgColors.spaceColor);
+    List<int?> line = List.filled(lineLength, Colors.white);
     var offset = 0;
     for (var i = 0; i < spaces.length; i++) {
       offset += spaces[i];
@@ -147,8 +162,9 @@ class DescriptionIterator extends Iterable<Line> with Iterator<Line> {
     if (lengthLeft <= 0) {
       for (var i = 0; i < spaces.length - 1; i++) {
         if (spaces[i] > 1) {
-          _length = _length - spaces[i] + 2;
-          spaces[i] = 1;
+          final newSpace = lineDescription.description.minSpaceAt(i);
+          _length = _length - spaces[i] + newSpace + 1;
+          spaces[i] = newSpace;
           spaces[i + 1] += 1;
           return true;
         }

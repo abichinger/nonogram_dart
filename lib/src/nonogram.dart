@@ -1,3 +1,8 @@
+import 'dart:typed_data';
+
+import 'package:collection/collection.dart';
+import 'package:crypto/crypto.dart';
+import 'package:image/image.dart' as image;
 import 'package:nonogram_dart/nonogram_dart.dart';
 
 abstract class Line extends Iterable<int?> {
@@ -38,7 +43,7 @@ abstract class Line extends Iterable<int?> {
         return Description(strokes);
       }
       if (currentColor != color) {
-        if (currentColor != null && currentColor != NgColors.spaceColor) {
+        if (currentColor != null && currentColor != Colors.white) {
           strokes.add(Stroke(currentColor, strokeLength));
         }
         currentColor = color;
@@ -46,7 +51,7 @@ abstract class Line extends Iterable<int?> {
       }
       strokeLength++;
     }
-    if (currentColor != null && currentColor != NgColors.spaceColor) {
+    if (currentColor != null && currentColor != Colors.white) {
       strokes.add(Stroke(currentColor, strokeLength));
     }
 
@@ -59,7 +64,7 @@ abstract class Line extends Iterable<int?> {
       if (color == null) {
         return "n";
       }
-      if (color == NgColors.spaceColor) {
+      if (color == Colors.white) {
         return "□";
       }
       return "■";
@@ -194,11 +199,43 @@ class Grid extends Iterable<List<int?>> {
   const Grid(this._rows);
 
   factory Grid.empty({required int width, required int height}) {
+    return Grid.filled(width: width, height: height, color: null);
+  }
+
+  factory Grid.filled({required int width, required int height, int? color}) {
     final rows = List.generate(height, (r) {
-      List<int?> row = List.filled(width, null);
+      List<int?> row = List.filled(width, color);
       return row;
     });
     return Grid(rows);
+  }
+
+  factory Grid.fromPng(Uint8List imageData) {
+    final img = image.decodePng(imageData);
+    if (img == null) {
+      throw 'failed to decode image';
+    }
+
+    return Grid.fromImage(img);
+  }
+
+  factory Grid.fromImage(image.Image img) {
+    final grid = Grid.empty(width: img.width, height: img.height);
+    for (int x = 0; x < img.width; x++) {
+      for (int y = 0; y < img.height; y++) {
+        final pixel = img.getPixelSafe(x, y);
+        grid.set(
+            y,
+            x,
+            image.rgbaToUint32(
+              pixel.b.toInt(),
+              pixel.g.toInt(),
+              pixel.r.toInt(),
+              pixel.a.toInt(),
+            ));
+      }
+    }
+    return grid;
   }
 
   Line getRow(int i) {
@@ -241,16 +278,76 @@ class Grid extends Iterable<List<int?>> {
   }
 
   Nonogram toNonogram() {
-    assert(filledOut);
-
-    final rows = List.generate(height, (i) => getRow(i).toDescription());
-    final columns = List.generate(width, (i) => getColumn(i).toDescription());
+    final rows = List.generate(
+      height,
+      (i) => getRow(i).toDescription(returnIfNull: false),
+    );
+    final columns = List.generate(
+      width,
+      (i) => getColumn(i).toDescription(returnIfNull: false),
+    );
     return Nonogram(rows, columns);
   }
 
   @override
   String toString() {
     return List.generate(height, (i) => getRow(i).toString()).join("\n");
+  }
+
+  image.Image toImage() {
+    final img = image.Image(width: width, height: height, numChannels: 4);
+
+    for (int x = 0; x < img.width; x++) {
+      for (int y = 0; y < img.height; y++) {
+        final c = get(y, x) ?? Colors.white;
+        image.drawPixel(
+            img,
+            x,
+            y,
+            image.ColorRgba8(
+              image.uint32ToBlue(c),
+              image.uint32ToGreen(c),
+              image.uint32ToRed(c),
+              image.uint32ToAlpha(c),
+            ));
+      }
+    }
+
+    return img;
+  }
+
+  Uint8List toPng() {
+    final img = toImage();
+    return image.encodePng(img);
+  }
+
+  Grid toMonochrome({bool Function(int? color)? isPrimary}) {
+    final grid = Grid.empty(width: width, height: height);
+    final p = isPrimary ?? Colors.isPrimary;
+
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        final c = get(y, x);
+        if (p(c)) {
+          grid.set(y, x, Colors.black);
+        } else {
+          grid.set(y, x, Colors.white);
+        }
+      }
+    }
+    return grid;
+  }
+
+  String getHash() {
+    final img = toImage();
+    final bytes = img.getBytes(order: image.ChannelOrder.argb);
+    return sha256.convert(bytes).toString();
+  }
+
+  List<Solution> solutions() {
+    final nonogram = toNonogram();
+    final solver = GuessingSolver.empty(nonogram);
+    return solver.toList();
   }
 }
 
@@ -267,8 +364,33 @@ class Nonogram {
     );
   }
 
+  factory Nonogram.empty({required int width, required int height}) {
+    return Nonogram(
+      List.generate(height, (index) => const Description([])),
+      List.generate(width, (index) => const Description([])),
+    );
+  }
+
   int get height => rows.length;
   int get width => columns.length;
+  Set<int> get colors {
+    return rows.fold<Set<int>>({}, (s, d) => s..addAll(d.colors));
+  }
+
+  int get maxRowSegments {
+    return rows.map((d) => d.strokes.length).max;
+  }
+
+  int get maxColumnSegments {
+    return columns.map((d) => d.strokes.length).max;
+  }
+
+  double get filledPercentage {
+    double max = (width * height).toDouble();
+    int filled = rows.fold(
+        0, (acc, d) => acc + d.strokes.fold(0, (acc, s) => acc + s.length));
+    return filled / max;
+  }
 
   bool solvedBy(Grid grid) {
     if (grid.height != height || grid.width != width) {

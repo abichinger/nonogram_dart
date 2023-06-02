@@ -1,20 +1,21 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nonogram_dart/nonogram_dart.dart';
 import 'package:nonogram_dart/src/description.dart' as desc;
-import 'package:nonogram_dart/src/nonogram.dart';
-import 'package:nonogram_dart/src/solver/line_solver.dart';
 
 void main() {
+  const b = Colors.black;
+  const w = Colors.white;
   group('DescriptionIterator', () {
     group('iterate possible lines of a description', () {
       test('3', () {
         const d = desc.Description([
-          desc.Stroke(1, 3),
+          desc.Stroke(b, 3),
         ]);
 
         var expected = [
-          [1, 1, 1, 0, 0],
-          [0, 1, 1, 1, 0],
-          [0, 0, 1, 1, 1],
+          [b, b, b, w, w],
+          [w, b, b, b, w],
+          [w, w, b, b, b],
         ];
 
         var i = 0;
@@ -30,14 +31,14 @@ void main() {
     group('iterate possible lines', () {
       test('3', () {
         const d = desc.Description([
-          desc.Stroke(1, 3),
+          desc.Stroke(b, 3),
         ]);
 
         var line = ListLine([null, 1, null, null, null]);
 
         var expected = [
-          [1, 1, 1, 0, 0],
-          [0, 1, 1, 1, 0],
+          [b, b, b, w, w],
+          [w, b, b, b, w],
         ];
 
         var i = 0;
@@ -49,15 +50,15 @@ void main() {
 
       test('1 1', () {
         const d = desc.Description([
-          desc.Stroke(1, 1),
-          desc.Stroke(1, 1),
+          desc.Stroke(b, 1),
+          desc.Stroke(b, 1),
         ]);
 
         var line = ListLine([null, 1, null, null, null]);
 
         var expected = [
-          [0, 1, 0, 1, 0],
-          [0, 1, 0, 0, 1],
+          [w, b, w, b, w],
+          [w, b, w, w, b],
         ];
 
         var i = 0;
@@ -72,29 +73,29 @@ void main() {
   group('LineDescription', () {
     test('toLine', () {
       const d = desc.Description([
-        desc.Stroke(1, 1),
-        desc.Stroke(1, 2),
+        desc.Stroke(b, 1),
+        desc.Stroke(b, 2),
       ]);
 
       final lineDesc = LineDescription.from(d);
-      expect(lineDesc.toLine(4), [1, 0, 1, 1]);
-      expect(lineDesc.toLine(5), [1, 0, 1, 1, 0]);
+      expect(lineDesc.toLine(4), [b, w, b, b]);
+      expect(lineDesc.toLine(5), [b, w, b, b, w]);
     });
   });
 
   group('PermutationSover', () {
     test('getSteps', () {
       const d = desc.Description([
-        desc.Stroke(1, 4),
+        desc.Stroke(b, 4),
       ]);
 
-      var line = ListLine([null, 1, null, null, null, null]);
+      var line = ListLine([null, b, null, null, null, null]);
 
       final solver = PermutationSolver(line, d);
       var steps = solver.getSteps()..sort((a, b) => a.i.compareTo(b.i));
       expect(steps.length, 3);
       expect(steps.map((s) => s.i), [2, 3, 5]);
-      expect(steps.map((s) => s.color), [1, 1, 0]);
+      expect(steps.map((s) => s.color), [b, b, w]);
     });
   });
 }
