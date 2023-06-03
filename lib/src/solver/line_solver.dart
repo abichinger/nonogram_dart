@@ -132,16 +132,19 @@ class DescriptionIterator extends Iterable<Line> with Iterator<Line> {
   bool _done = false;
 
   DescriptionIterator(this.lineDescription, int lineLength) {
-    _length = lineDescription.length;
-    _lineLength = lineLength + 1;
+    _length = lineDescription.length - 1;
+    _lineLength = lineLength;
+
+    // set to -1 for first iteration
+    lineDescription.spaces[0] -= 1;
   }
 
   @override
-  get current => ListLine(lineDescription.toLine(_lineLength).sublist(1));
+  get current => ListLine(lineDescription.toLine(_lineLength));
 
   @override
   Iterator<Line> get iterator =>
-      DescriptionIterator(lineDescription.copy(), _lineLength - 1);
+      DescriptionIterator(lineDescription.copy(), _lineLength);
 
   List<int> get spaces => lineDescription.spaces;
 
@@ -161,14 +164,15 @@ class DescriptionIterator extends Iterable<Line> with Iterator<Line> {
     final lengthLeft = _lineLength - _length;
     if (lengthLeft <= 0) {
       for (var i = 0; i < spaces.length - 1; i++) {
-        if (spaces[i] > 1) {
-          final newSpace = lineDescription.description.minSpaceAt(i);
-          _length = _length - spaces[i] + newSpace + 1;
-          spaces[i] = newSpace;
+        final minSpaceAt = lineDescription.description.minSpaceAt(i);
+        if (spaces[i] > minSpaceAt) {
+          _length = _length - spaces[i] + minSpaceAt + 1;
+          spaces[i] = minSpaceAt;
           spaces[i + 1] += 1;
           return true;
         }
       }
+      _done = true;
       return false;
     } else {
       _length += 1;

@@ -122,5 +122,17 @@ void main() {
 
       expect(solver.grid.toList(), grid.toList());
     });
+
+    test('solve (invader monochrome)', () {
+      final grid =
+          Grid.fromPng(File('test/puzzles/invader.png').readAsBytesSync())
+              .toMonochrome();
+      final puzzle = grid.toNonogram();
+
+      final solver = GuessingSolver.empty(puzzle);
+      expect(solver.toList().length, 1);
+      expect(puzzle.isLineSolveable(), true);
+      expect(solver.grid.toList(), grid.toList());
+    });
   });
 }

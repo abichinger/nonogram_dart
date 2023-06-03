@@ -84,7 +84,7 @@ void main() {
   });
 
   group('PermutationSover', () {
-    test('getSteps', () {
+    test('4 n ■ n n n n', () {
       const d = desc.Description([
         desc.Stroke(b, 4),
       ]);
@@ -96,6 +96,32 @@ void main() {
       expect(steps.length, 3);
       expect(steps.map((s) => s.i), [2, 3, 5]);
       expect(steps.map((s) => s.color), [b, b, w]);
+    });
+
+    test('1 5 n □ ■ ■ ■ ■ ■ □', () {
+      const d = desc.Description([
+        desc.Stroke(b, 1),
+        desc.Stroke(b, 5),
+      ]);
+
+      var line = ListLine([null, w, b, b, b, b, b, w]);
+
+      final solver = PermutationSolver(line, d);
+      var steps = solver.getSteps();
+      expect(steps.length, 1);
+    });
+
+    test('1 3 n n n n n', () {
+      const d = desc.Description([
+        desc.Stroke(b, 1),
+        desc.Stroke(b, 3),
+      ]);
+
+      var line = ListLine([null, null, null, null, null]);
+
+      final solver = PermutationSolver(line, d);
+      var steps = solver.getSteps();
+      expect(steps.length, 5);
     });
   });
 }
