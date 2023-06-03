@@ -123,5 +123,15 @@ void main() {
       var steps = solver.getSteps();
       expect(steps.length, 5);
     });
+
+    test('n n n', () {
+      const d = desc.Description([]);
+
+      var line = ListLine([null, null, null]);
+
+      final solver = PermutationSolver(line, d);
+      var steps = solver.getSteps();
+      expect(steps.length, 3);
+    });
   });
 }

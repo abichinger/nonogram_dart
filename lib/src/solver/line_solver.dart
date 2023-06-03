@@ -136,7 +136,9 @@ class DescriptionIterator extends Iterable<Line> with Iterator<Line> {
     _lineLength = lineLength;
 
     // set to -1 for first iteration
-    lineDescription.spaces[0] -= 1;
+    if (!lineDescription.isEmpty) {
+      lineDescription.spaces[0] -= 1;
+    }
   }
 
   @override
