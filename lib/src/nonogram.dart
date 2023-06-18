@@ -210,29 +210,31 @@ class Grid extends Iterable<List<int?>> {
     return Grid(rows);
   }
 
-  factory Grid.fromPng(Uint8List imageData) {
+  factory Grid.fromPng(Uint8List imageData, {Map<int?, int?>? colorMapping}) {
     final img = image.decodePng(imageData);
     if (img == null) {
       throw 'failed to decode image';
     }
 
-    return Grid.fromImage(img);
+    return Grid.fromImage(img, colorMapping: colorMapping);
   }
 
-  factory Grid.fromImage(image.Image img) {
+  factory Grid.fromImage(image.Image img, {Map<int?, int?>? colorMapping}) {
     final grid = Grid.empty(width: img.width, height: img.height);
     for (int x = 0; x < img.width; x++) {
       for (int y = 0; y < img.height; y++) {
         final pixel = img.getPixelSafe(x, y);
+        final c = image.rgbaToUint32(
+          pixel.b.toInt(),
+          pixel.g.toInt(),
+          pixel.r.toInt(),
+          pixel.a.toInt(),
+        );
         grid.set(
-            y,
-            x,
-            image.rgbaToUint32(
-              pixel.b.toInt(),
-              pixel.g.toInt(),
-              pixel.r.toInt(),
-              pixel.a.toInt(),
-            ));
+          y,
+          x,
+          colorMapping?.containsKey(c) == true ? colorMapping![c] : c,
+        );
       }
     }
     return grid;
@@ -294,12 +296,16 @@ class Grid extends Iterable<List<int?>> {
     return List.generate(height, (i) => getRow(i).toString()).join("\n");
   }
 
-  image.Image toImage() {
+  image.Image toImage({
+    Map<int?, int?>? colorMapping,
+    int nullColor = Colors.white,
+  }) {
     final img = image.Image(width: width, height: height, numChannels: 4);
 
     for (int x = 0; x < img.width; x++) {
       for (int y = 0; y < img.height; y++) {
-        final c = get(y, x) ?? Colors.white;
+        var c = get(y, x);
+        c = colorMapping?[c] ?? c ?? nullColor;
         image.drawPixel(
             img,
             x,
@@ -316,8 +322,8 @@ class Grid extends Iterable<List<int?>> {
     return img;
   }
 
-  Uint8List toPng() {
-    final img = toImage();
+  Uint8List toPng({Map<int?, int?>? colorMapping}) {
+    final img = toImage(colorMapping: colorMapping);
     return image.encodePng(img);
   }
 

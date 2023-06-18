@@ -1,6 +1,11 @@
+## 2.1.0
+
+- add colorMapping
+
 ## 2.0.1
 
 - fix line solver
+
 ## 2.0.0
 
 - support colored nonograms

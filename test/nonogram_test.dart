@@ -9,6 +9,8 @@ import 'test_util.dart';
 void main() {
   const b = Colors.black;
   const w = Colors.white;
+  const red = 0xFFFF0000;
+  const blue = 0xFF0000FF;
 
   group("Line", () {
     test("toDescription", () {
@@ -76,8 +78,34 @@ void main() {
         "63f7b6eefc27e80fa15ee68da3230453e525591225efedc7faa9027ac3f5f420",
       );
     });
-  });
 
+    test("colorMapping", () {
+      final expected = [
+        [w, b, b],
+        [b, w, b],
+        [b, b, w],
+      ];
+
+      var grid =
+          Grid.fromPng(File('test/puzzles/stairs.png').readAsBytesSync());
+
+      var png = grid.toPng(colorMapping: {b: red, w: blue});
+      grid = Grid.fromPng(png, colorMapping: {red: w, blue: b});
+      expectGrid(grid, expected);
+    });
+
+    test("transparent colorMapping", () {
+      final expected = [
+        [null],
+      ];
+
+      var grid = Grid(expected);
+      var png = grid.toPng(colorMapping: {null: Colors.transparent});
+      grid = Grid.fromPng(png, colorMapping: {Colors.transparent: null});
+
+      expectGrid(grid, expected);
+    });
+  });
   group("Nonogram", () {
     test("filled", () {
       final grid =

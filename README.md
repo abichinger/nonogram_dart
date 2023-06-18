@@ -24,7 +24,6 @@ You can see the library in action at [nonobattle.com](https://www.nonobattle.com
 
 TODO:
 
-- support colored nonograms
 - improve generator
 - improve performance of solver
 
