@@ -11,6 +11,7 @@ void main() {
   const w = Colors.white;
   const red = 0xFFFF0000;
   const blue = 0xFF0000FF;
+  const black30 = 0x4C000000;
 
   group("Line", () {
     test("toDescription", () {
@@ -34,6 +35,12 @@ void main() {
       final l4 = ListLine([null, null, null]);
       expect(l4.toDescription(), const desc.Description([]));
       expect(l4.toDescription(returnIfNull: false), const desc.Description([]));
+
+      final l5 = ListLine([b, black30, b]);
+      expect(
+        l5.toDescription(isPrimary: Colors.isPrimary),
+        desc.Description.monochrome([1, 1]),
+      );
     });
   });
 

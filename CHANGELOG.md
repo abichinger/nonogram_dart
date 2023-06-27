@@ -1,3 +1,7 @@
+## 2.1.1
+
+- treat colors with transparency as blank cells
+
 ## 2.1.0
 
 - add colorMapping

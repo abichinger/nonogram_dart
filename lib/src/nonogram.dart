@@ -30,7 +30,10 @@ abstract class Line extends Iterable<int?> {
 
   Line get reversed => ReversedLine(this);
 
-  Description toDescription({bool returnIfNull = true}) {
+  Description toDescription({
+    bool returnIfNull = true,
+    bool Function(int? color)? isPrimary,
+  }) {
     if (isEmpty) {
       return const Description([]);
     }
@@ -43,7 +46,8 @@ abstract class Line extends Iterable<int?> {
         return Description(strokes);
       }
       if (currentColor != color) {
-        if (currentColor != null && currentColor != Colors.white) {
+        if (currentColor != null &&
+            (isPrimary ?? Colors.isPrimary)(currentColor)) {
           strokes.add(Stroke(currentColor, strokeLength));
         }
         currentColor = color;
@@ -51,7 +55,7 @@ abstract class Line extends Iterable<int?> {
       }
       strokeLength++;
     }
-    if (currentColor != null && currentColor != Colors.white) {
+    if (currentColor != null && (isPrimary ?? Colors.isPrimary)(currentColor)) {
       strokes.add(Stroke(currentColor, strokeLength));
     }
 
@@ -279,14 +283,15 @@ class Grid extends Iterable<List<int?>> {
     return Grid(copy);
   }
 
-  Nonogram toNonogram() {
+  Nonogram toNonogram({bool Function(int? color)? isPrimary}) {
     final rows = List.generate(
       height,
-      (i) => getRow(i).toDescription(returnIfNull: false),
+      (i) => getRow(i).toDescription(returnIfNull: false, isPrimary: isPrimary),
     );
     final columns = List.generate(
       width,
-      (i) => getColumn(i).toDescription(returnIfNull: false),
+      (i) =>
+          getColumn(i).toDescription(returnIfNull: false, isPrimary: isPrimary),
     );
     return Nonogram(rows, columns);
   }
