@@ -1,3 +1,7 @@
+## 2.1.2
+
+- improve performance of LogicalSolver
+
 ## 2.1.1
 
 - treat colors with transparency as blank cells

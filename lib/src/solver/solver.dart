@@ -44,7 +44,19 @@ abstract class Solver extends Iterable<Solution> {
 }
 
 class LogicalSolver extends Solver {
-  LogicalSolver(super.nonogram, super.grid, {super.steps});
+  late final List<bool> _dirtyRows;
+  late final List<bool> _dirtyColumns;
+
+  LogicalSolver(
+    super.nonogram,
+    super.grid, {
+    super.steps,
+    List<bool>? dirtyRows,
+    List<bool>? dirtyColumns,
+  }) {
+    _dirtyRows = dirtyRows ?? List.filled(nonogram.height, true);
+    _dirtyColumns = dirtyColumns ?? List.filled(nonogram.width, true);
+  }
 
   factory LogicalSolver.empty(Nonogram nonogram) {
     return LogicalSolver(
@@ -59,26 +71,8 @@ class LogicalSolver extends Solver {
   List<Step> solve() {
     while (true) {
       var stepsStart = steps.length;
-      _sweep(
-        grid.height,
-        (i) => grid.getRow(i),
-        (i) => nonogram.rows[i],
-        (step, i) => step.copyWith(
-          pos: Position(i, step.i),
-          descriptionIndex: i,
-          focus: SolverFocus.rows,
-        ),
-      );
-      _sweep(
-        grid.width,
-        (i) => grid.getColumn(i),
-        (i) => nonogram.columns[i],
-        (step, i) => step.copyWith(
-          pos: Position(step.i, i),
-          descriptionIndex: i,
-          focus: SolverFocus.columns,
-        ),
-      );
+      _sweepRows();
+      _sweepColumns();
 
       // stop if solver is stalling
       if (stepsStart == steps.length) {
@@ -88,23 +82,60 @@ class LogicalSolver extends Solver {
     return steps;
   }
 
-  void _sweep(
-    int n,
-    Line Function(int i) getLine,
-    Description Function(int i) getDescription,
-    Step Function(Step step, int i) copyStep,
-  ) {
-    for (var i = 0; i < n; i++) {
-      final line = getLine(i);
-      if (line.filledOut) {
+  void _sweepRows() {
+    for (var i = 0; i < grid.height; i++) {
+      if (!_dirtyRows[i]) {
         continue;
       }
-      final lineSolver = PermutationSolver(line, getDescription(i));
-      for (var step in lineSolver.getSteps()) {
+      final line = grid.getRow(i);
+      final description = nonogram.rows[i];
+
+      for (var step in _solveLine(line, description)) {
         line.set(step.i, step.color);
-        steps.add(copyStep(step, i));
+        steps.add(
+          step.copyWith(
+            pos: Position(i, step.i),
+            descriptionIndex: i,
+            focus: SolverFocus.rows,
+          ),
+        );
+        _dirtyColumns[step.i] = true;
       }
+
+      _dirtyRows[i] = false;
     }
+  }
+
+  void _sweepColumns() {
+    for (var i = 0; i < grid.width; i++) {
+      if (!_dirtyColumns[i]) {
+        continue;
+      }
+      final line = grid.getColumn(i);
+      final description = nonogram.columns[i];
+
+      for (var step in _solveLine(line, description)) {
+        line.set(step.i, step.color);
+        steps.add(
+          step.copyWith(
+            pos: Position(step.i, i),
+            descriptionIndex: i,
+            focus: SolverFocus.columns,
+          ),
+        );
+        _dirtyRows[step.i] = true;
+      }
+
+      _dirtyColumns[i] = false;
+    }
+  }
+
+  List<Step> _solveLine(Line line, Description description) {
+    if (line.filledOut) {
+      return [];
+    }
+    final lineSolver = PermutationSolver(line, description);
+    return lineSolver.getSteps();
   }
 
   @override

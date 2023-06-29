@@ -152,8 +152,6 @@ class DescriptionIterator extends Iterable<Line> with Iterator<Line> {
 
   @override
   bool moveNext() {
-    //TODO: colored nonograms can have 0 spaces between different colors
-
     if (_done) {
       return false;
     }
