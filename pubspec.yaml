@@ -1,6 +1,6 @@
 name: nonogram_dart
 description: Solve and generate nonograms, also known as Paint by Numbers, Picross and Griddlers
-version: 2.1.2
+version: 2.1.3
 homepage: https://github.com/abichinger/nonogram_dart
 repository: https://github.com/abichinger/nonogram_dart
 

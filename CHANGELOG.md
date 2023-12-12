@@ -1,3 +1,8 @@
+## 2.1.3
+
+Bugfixes
+- use setPixel instead of drawPixel
+
 ## 2.1.2
 
 - improve performance of LogicalSolver

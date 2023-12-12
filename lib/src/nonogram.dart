@@ -311,8 +311,7 @@ class Grid extends Iterable<List<int?>> {
       for (int y = 0; y < img.height; y++) {
         var c = get(y, x);
         c = colorMapping?[c] ?? c ?? nullColor;
-        image.drawPixel(
-            img,
+        img.setPixel(
             x,
             y,
             image.ColorRgba8(

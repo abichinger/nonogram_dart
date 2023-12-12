@@ -112,6 +112,19 @@ void main() {
 
       expectGrid(grid, expected);
     });
+
+    test("almost identical colors", () {
+      final expected = [
+        [0xFA000001],
+        [0xFA000002],
+      ];
+
+      var grid = Grid(expected);
+
+      final img = grid.toImage();
+      grid = Grid.fromImage(img);
+      expectGrid(grid, expected);
+    });
   });
   group("Nonogram", () {
     test("filled", () {
