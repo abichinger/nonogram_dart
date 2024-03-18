@@ -1,4 +1,4 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:nonogram_dart/nonogram_dart.dart';
 import 'package:nonogram_dart/src/description.dart' as desc;
 
