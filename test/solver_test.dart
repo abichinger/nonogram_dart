@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:nonogram_dart/src/description.dart' as desc;
 import 'package:nonogram_dart/src/nonogram.dart';
 import 'package:nonogram_dart/src/solver/solver.dart';
